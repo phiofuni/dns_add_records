@@ -3,10 +3,15 @@ import os
 import subprocess
 
 app = Flask(__name__)
-# app.secret_key = 'supersecretkey'
+app.config['UPLOAD_FOLDER'] = './uploads'
+app.secret_key = 'supersecretkey'
+
 
 NAMED_CONF_PATH = '/opt/homebrew/etc/bind/named.conf'
 ZONE_PATH = '/opt/homebrew/etc/bind/zones'
+
+# Ensure the uploads directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def home():
@@ -52,34 +57,39 @@ zone "<{zone_name}>" {{
             with open(NAMED_CONF_PATH,'a') as conf_file:
                 conf_file.write(new_zone)
             
+            #check 'named-checkzone <origin> <filename>.txt'
             check_zone_command = ['named-checkzone',zone_name,zone_path]
             check_zone_result = subprocess.run(check_zone_command, capture_output=True, text=True, timeout=10)
             if check_zone_result.stderr:
                 flash(f'Check zone error {check_zone_result.stderr}')
-                return redirect(url_for('home')) 
+                # return redirect(url_for('home')) 
             flash(f'Check zone Result {check_zone_result.stdout}')
 
+            #check 'named-checkconf'
             check_conf_command = ['named-checkconf']
             check_conf_result = subprocess.run(check_conf_command, capture_output=True, text=True, timeout=10)
             if check_conf_result.stderr:
                 flash(f'Check named.conf error {check_conf_result.stderr}')
-                return redirect(url_for('home'))
+                # return redirect(url_for('home'))
             flash(f'Check named.conf Result {check_conf_result.stdout}')
 
+            # check rndc reconfig
             reconfig_command = ['rndc', 'reconfig']
             reconfig_result = subprocess.run(reconfig_command,capture_output=True,timeout=10)
             if reconfig_result.stderr:
                 flash(f'Reconfig error {reconfig_result.stderr}')
-                return redirect(url_for('home')) 
+                # return redirect(url_for('home')) 
             flash(f'Reconfig Result {reconfig_result.stdout}')
 
+            #check 'rndc reload'
             reload_command = ['rndc', 'reload']
             reload_result = subprocess.run(reload_command,capture_output=True,timeout=10)
             if reload_result.stderr:
                 flash(f'Reload error {reload_result.stderr}')
-                return redirect(url_for('home')) 
+                # return redirect(url_for('home')) 
             flash(f'Reload Result {reload_result.stdout}')
 
+            # check 'rndc reload <origin>'
             reload_zone_command = ['rndc','reload',zone_name]
             reload_zone_result = subprocess.run(reload_zone_command,capture_output=True,timeout=10)
             if reload_zone_result.stderr:
@@ -87,11 +97,12 @@ zone "<{zone_name}>" {{
                 # return redirect(url_for('home')) 
             flash(f'Reload zone Result {reload_zone_result.stdout}')
 
+            # check 'dig <address-in-the-zonefile>'
             verify_command = ['dig',zone_name]
             verify_result = subprocess.run(verify_command,capture_output=True,timeout=10)
             if verify_result.stderr:
                 flash(f'verify dns error {verify_result.stderr}')
-                return redirect(url_for('home')) 
+                # return redirect(url_for('home')) 
             flash(f'verify dns Result {verify_result.stdout}')            
 
             return redirect(url_for('home'))
