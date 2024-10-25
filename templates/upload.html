@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload zone File</title>
+</head>
+<body>
+    <h1>Upload Zone File</h1>
+    <form action="/process" method="POST" enctype="multipart/form-data">
+        <input type="text" name="zone_name" required><br><br>
+        <input type="file" name="file" accept=".txt" required><br><br>
+        <input type="submit" value="Upload and Process">
+    </form>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="flashes">
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>
